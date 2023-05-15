@@ -1,0 +1,25 @@
+project:
+  type: website
+  output-dir: docs
+
+website:
+  title: "Ben's Projects"
+  navbar:
+    right:
+      - about.qmd
+      - icon: youtube
+        text: Youtube
+        href: https://www.youtube.com/@jepsonstats 
+      - icon: linkedin
+        text: LinkedIn
+        href: https://linkedin.com/in/benjepson/
+      - icon: github
+        text: Github
+        href: https://github.com/benjepson
+format:
+  html:
+    theme: cosmo
+    css: styles.css
+
+editor: visual
+

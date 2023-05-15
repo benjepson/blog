@@ -1,0 +1,18 @@
+---
+title: "About"
+image: profile.jpg
+about:
+  template: jolla
+  links:
+    - icon: youtube
+      text: Youtube
+      href: https://www.youtube.com/@jepsonstats 
+    - icon: linkedin
+      text: LinkedIn
+      href: https://linkedin.com/in/benjepson/
+    - icon: github
+      text: Github
+      href: https://github.com/benjepson
+---
+
+Join me as I go through projects that interest me.
