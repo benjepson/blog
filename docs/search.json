@@ -7,24 +7,17 @@
     "text": "Join me as I go through projects that interest me."
   },
   {
-    "objectID": "posts/post-with-code/index.html",
-    "href": "posts/post-with-code/index.html",
-    "title": "Post With Code",
-    "section": "",
-    "text": "This is a post with executable code.\n\n1 + 1\n\n[1] 2"
-  },
-  {
-    "objectID": "posts/welcome/index.html",
-    "href": "posts/welcome/index.html",
-    "title": "Welcome To My Blog",
-    "section": "",
-    "text": "First post in my portfolio.\nEverything I’ve done in the past has been in private industry, it’s time to step out and put some work in public.\nI’ve worked as an industrial scientist and statistician/data scientist.\nI’ll be adding videos on YouTube, check those out too."
-  },
-  {
     "objectID": "index.html",
     "href": "index.html",
     "title": "Ben’s projects",
     "section": "",
-    "text": "Welcome To My Blog\n\n\n\n\n\n\n\nnews\n\n\n\n\n\n\n\n\n\n\n\nMay 12, 2023\n\n\nBen Jepson\n\n\n\n\n\n\nNo matching items"
+    "text": "Welcome To My Blog\n\n\n\n\n\n\n\nnews\n\n\n\n\n\n\n\n\n\n\n\nBen Jepson\n\n\n\n\n\n\nNo matching items"
+  },
+  {
+    "objectID": "posts/welcome/welcomepost.html",
+    "href": "posts/welcome/welcomepost.html",
+    "title": "Welcome To My Blog",
+    "section": "",
+    "text": "First post!\nEverything I’ve done in the past has been in private industry, it’s time to step out and put some work in public.\nI’ve worked as an industrial food scientist and statistician.\nI’ll sometimes talk about how things work, probably more often how they don’t work.\nI’ll be adding videos on YouTube, check those out too."
   }
 ]
