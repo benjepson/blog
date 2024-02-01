@@ -163,7 +163,7 @@ This is neat - I see that most excursions above 60% RH were for about a day or l
 
 ### Time below 60% RH
 
-We can also look at time *below* 60% RH, I'll use a control chart to demonstrate that method. This one is an interesting case where the data is clearly skewed, however a control chart is still useful. The blue line is the average hours below 60, the red lines represent upper and lower expected limits, commonly known as 3 sigma limits. Any point outside these limits is considered potentially unusual. 
+We can also look at time *below* 60% RH, I'll use a control chart to demonstrate that method. This one is an interesting case where the data is clearly skewed, however a control chart is still useful. The blue line is the average hours below 60, the red lines represent upper and lower expected limits, commonly known as 3 sigma limits. Any point outside these limits is considered potentially unusual.
 
 ```{r}
 humid_intermediate <- humid_RL %>% 
