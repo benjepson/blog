@@ -1,0 +1,15 @@
+{
+  "hash": "34eaab1039a29c98053981504affda0f",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: \"Beer Production Forecasting\"\ndescription: \"SPC applied to forecasting\"\nauthor: \"Ben Jepson\"\ndate: \"\"\nformat:\n  html:\n    toc: true\n    code-fold: true\n    draft: true\ncategories: [Beer, intuitive analysis, forecasting, prediction, SPC]\n---\n\n\n\n\n## Introduction\n\n\n\n\n![](profile.jpg)\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

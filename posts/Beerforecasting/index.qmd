@@ -1,0 +1,33 @@
+---
+title: "Beer Production Forecasting"
+description: "SPC applied to forecasting"
+author: "Ben Jepson"
+date: ""
+draft: true
+format:
+  html:
+    toc: true
+    code-fold: true
+categories: [Beer, intuitive analysis, forecasting, prediction, SPC]
+---
+
+```{r setup, include=FALSE, dpi = 600, fig.width=8, fig.height = 5}
+#| echo: false
+#| message: false
+#| warning: false
+
+library(tidyverse)
+library(plotly)
+library(data.table)
+library(patchwork)
+library(ggQC)
+library(fpp3)
+theme_set(theme_classic())
+```
+
+## Introduction
+
+
+
+
+![](profile.jpg)

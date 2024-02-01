@@ -1,0 +1,221 @@
+---
+title: "Indoor Air Quality Analysis"
+description: "Evaluating air quality"
+author: "Ben Jepson"
+date: ""
+format:
+  html:
+    toc: true
+    code-fold: true
+categories: [Airquality, intuitive analysis, SPC]
+---
+
+```{r setup, include=FALSE, dpi = 600, fig.width=8, fig.height = 5}
+#| echo: false
+#| message: false
+#| warning: false
+
+library(tidyverse)
+library(plotly)
+library(data.table)
+library(patchwork)
+library(ggQC)
+theme_set(theme_classic())
+```
+
+## Introduction
+
+I'm running an [Airthings Wave Plus](https://www.airthings.com/wave-plus) air quality meter in my basement.
+
+I got it awhile ago because the price was right, and I figured it would make for some interesting data projects!
+
+It logs radon every hour, and every 5 minutes it logs: carbon dioxide, VOCs, humidity, temperature, and pressure. Airthings has a great phone app (bluetooth) and excellent web dashboards. For this project, I'll be downloading the logs and working with them in R. They have an API if you want to get real time data, I plan to run a project with that in the future, but for now we'll work with a fixed dataset.
+
+Radon is important to me - I live in an area where it can be a problem. Temperature isn't too critical but since it's logged anyways we'll look at it, might also be an important predictor for other measurements. Humidity in the basement is important to know, I want to make sure it doesn't get above 60% RH, at least not for long. We don't want to have mold issues. I don't know that it's necessary to measure humidity, I believe I can feel when it's too high, but since we are logging it will be nice information to have, to confirm my sensory experience. Pressure might be used as a predictor for forecasting. VOC is important to look at, I want to have healthy air. $CO_2$ is (to me) a proxy for "freshness", I doubt it will be at a harmful level, but elevated levels might indicate a need for ventilation.
+
+I assume through this project that the Wave Plus is accurate for each measurement. I don't have secondary measurements for any of these to verify against. For what it's worth I did have an inexpensive temperature/humidity meter running at the same time for awhile, but the battery ran out and I haven't replaced it. The readings appeared very similar to the Wave Plus.
+
+```{r}
+### read in dataset
+#it comes in a single column, separated by ";"
+# wave_data <- read_delim("airthings_export_110623.csv",
+#                           delim = ";",
+#                           escape_double = FALSE,
+#                           col_types = cols(recorded = col_character()),
+#                           trim_ws = TRUE)
+# ### need to cleanup date column, there is a "T" between date & time
+# ### and turn it into date format
+# wave_data <- wave_data %>%
+#     mutate(recorded = as_datetime(gsub(pattern = "T",
+#                               replacement = " ",
+#                               x = wave_data$recorded))
+#     ) %>%
+# ### rename columns for convenience
+#     rename(date_time   = recorded,
+#            radon       = `RADON_SHORT_TERM_AVG pCi/L`,
+#            temperature = `TEMP °F`,
+#            humidity    = `HUMIDITY %`,
+#            pressure    = `PRESSURE mBar`,
+#            CO2         = `CO2 ppm`,
+#            VOC         = `VOC ppb`)
+# 
+# ### remove first week, calibration period
+# ### you know close enough, let's just start april 1st
+# wave_data <- wave_data %>%
+#     filter(date_time >= "2023-04-01 00:00:00")
+# 
+# saveRDS(wave_data, file = "wave_data.RDS")
+
+```
+
+```{r}
+#load the processed file
+wave_data <- readRDS("wave_data.RDS")
+```
+
+### Humidity - Exploration
+
+First I will look at relative humidity. Humidity is a potential problem in the warmer months.
+
+```{r}
+p1 <- wave_data %>%
+    select(date_time, humidity) %>%
+    ggplot(aes(x=date_time, y=humidity))+
+    #geom_point()+
+    geom_line()+
+    labs(x = "", y = "", title = "%RH April - November, average about 59")+
+    geom_hline(yintercept = mean(wave_data$humidity), color = "blue")+
+    geom_hline(yintercept = 60, color = "red")
+
+p2 <- wave_data %>%
+    select(date_time, humidity) %>%
+    ggplot(aes(x=humidity))+
+    geom_histogram(color = "white", fill = "light blue") +
+    theme(axis.line = element_blank(),
+                                axis.text = element_blank(),
+                                axis.ticks = element_blank(),
+                                axis.title = element_blank()) + 
+    coord_flip()
+
+p1 + p2 + plot_layout(widths = c(5,1))
+
+```
+
+Looking over this period, I can see in general a lot of the readings are below 60, with some above 60, and a few rare points above 65. It looks like RH is higher in May, and October - this might line up with the fact that the air conditioning isn't running around those times. Makes a lot of sense that way. It's hard to see each day, let's look at a smaller time period to check for patterns:
+
+```{r}
+wave_data[30000:32000, ] %>%
+    select(date_time, humidity) %>%
+    ggplot(aes(x=date_time, y=humidity))+
+    #geom_point()+
+    geom_line()
+```
+
+I didn't mention yet, %RH is recorded in 0.5% intervals, so there is some chunkiness. I believe measuring every 5 minutes is excessive, I could probably measure once an hour (or less) or take a daily average. Humidity rises and falls but I don't know how predictable that's going to be. Definitely cyclic and it looks like it rises through the day, and falls during the night. Not surprising.
+
+Interactive plot for exploration:
+
+```{r}
+wave_data %>%
+    select(date_time, humidity) %>%
+    ggplot(aes(x=date_time, y=humidity))+
+    geom_line()+
+    labs(x = "", y = "", title = "%RH April - November, average about 59")+
+    geom_hline(yintercept = mean(wave_data$humidity), color = "blue")+
+    geom_hline(yintercept = 60, color = "red") -> p 
+
+    ggplotly(p, dynamicTicks = TRUE) %>% 
+        rangeslider()
+```
+
+Zooming in on sections helps me see the cyclic nature, in general humidity does rise during the day and fall at night.
+
+#### Preliminary (practical) conclusions
+
+I've already learned enough to answer my question!
+
+The basement felt fine, no issues! No need for a dehumidifier. Unless/until something changes - next year? Never?
+
+In general, %RH stayed in a good range, there were some higher days but this didn't seem to cause problems. Next I'll look at how long the humidity was above 60%, even though it went higher from time to time I bet it was for relatively short intervals.
+
+Knowing how long humidity was above 60% will help me understand my conclusion that %RH was not an issue this year.
+
+### Length of time above 60% RH
+
+```{r}
+humid_RL <- wave_data %>% 
+    select(date_time, humidity) %>% 
+    mutate(over_60 = case_when(humidity > 60 ~ TRUE, 
+                               .default = FALSE))
+setDT(humid_RL)
+humid_RL$RLID <- rleid(humid_RL$over_60) #run length for gt/lt 60
+
+humid_RL[over_60 == TRUE] %>% 
+    group_by(RLID) %>% 
+    summarize(hours_above_60 = (sum(over_60)) * 5 / 60) %>% 
+
+    ggplot(aes(x=RLID, y=hours_above_60))+
+    geom_col()+
+    labs(x = "Run ID", y = "hours above 60% RH", title = "How long was each period of time above 60%RH?")
+```
+
+This is neat - I see that most excursions above 60% RH were for about a day or less, a few were between 2-4 days, and the longest was about 6 days. Seems that while the humidity did rise sometimes, as long as it's for less than a week I probably won't have issues? This is imprecise and doesn't take into account how far above 60% it was, but it's a start to understanding.
+
+### Time below 60% RH
+
+We can also look at time *below* 60% RH, I'll use a control chart to demonstrate that method. This one is an interesting case where the data is clearly skewed, however a control chart is still useful. The blue line is the average hours below 60, the red lines represent upper and lower expected limits, commonly known as 3 sigma limits. Any point outside these limits is considered potentially unusual. 
+
+```{r}
+humid_intermediate <- humid_RL %>% 
+    group_by(RLID) %>% 
+    mutate(counter_var = 1) %>%
+    summarize(hours_above_below_60 = sum(counter_var) * 5 / 60)
+
+humid_RL %>% 
+    select(RLID, over_60) %>% unique() %>% 
+    left_join(humid_intermediate, by = "RLID") %>% 
+#Now I have the FALSE segments aka 60 or below
+#I guess save false, and spc?
+    filter(over_60 == FALSE) %>% 
+    ggplot(aes(x = RLID, y = hours_above_below_60))+
+    geom_point()+
+    geom_line()+
+    stat_QC(method = "XmR")+
+    labs(y = "hours below 60% RH", 
+         title = "Control chart of run length below 60% RH")
+
+```
+
+In the plot we see there are many short intervals below 60, some as short as 5 minutes. There are also longer intervals. The upper limit is around 100 hours(4 days), so we might say any interval above this may be unusual. Note that the lower limit is below zero, which is not a possible value. In reality this control chart is one sided, which is ok, many processes end up having a boundary.
+
+### Comparison of time above and below 60% RH
+
+```{r}
+humid_RL %>% 
+    select(RLID, over_60) %>% unique() %>% 
+    left_join(humid_intermediate, by = "RLID") %>% 
+    ggplot(aes(x=RLID, y=hours_above_below_60, fill = over_60))+
+    geom_col()
+
+humid_RL %>% 
+    select(RLID, over_60) %>% unique() %>% 
+    left_join(humid_intermediate, by = "RLID") %>% 
+    mutate(over_60 = case_when(over_60 == FALSE ~ 'below 60', 
+                               over_60 == TRUE  ~ 'above 60')) %>% 
+    ggplot(aes(x = RLID, y = hours_above_below_60))+
+    geom_point()+
+    geom_line()+
+    stat_QC(method = "XmR", auto.label = TRUE)+
+    facet_wrap(~over_60)+
+    labs(y = "hours below 60% RH", 
+         title = "Control chart comparing time above and below 60% RH")
+
+```
+
+One last plot, we can get a sense of how the times above and below 60 compare with side by side control charts. The average for time below 60 is about 19 hours vs 7 hours for above 60. The limits for below are much wider, and there are many points outside the limit. This indicates that much more time is spent below 60%RH than above.
+
+### Conclusions (for now)
+
+I hope you found this exploratory analysis interesting, I may come back and try doing some forecasting later but I have already answered the questions at hand! Humidity does not seem to be an issue, at least not this summer. I plan to try forecasting radon, as that may be a difficult challenge. This was an intuitive analysis, and I wanted to demonstrate how many problems can be evaluated with control charts.
+
+![](profile.jpg)
