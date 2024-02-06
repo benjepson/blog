@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Ben Jepson">
-<meta name="description" content="SPC applied to forecasting">
+<meta name="description" content="SPC applied to forecasting &amp; monitoring">
 
 <title>Ben’s Projects - Australia Production Forecasting</title>
 <style>
@@ -21,6 +21,40 @@ ul.task-list li input[type="checkbox"] {
   width: 0.8em;
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
 }
 </style>
 
@@ -120,14 +154,13 @@ ul.task-list li input[type="checkbox"] {
 <header id="title-block-header" class="quarto-title-block default page-columns page-full">
   <div class="quarto-title-banner page-columns page-full">
     <div class="quarto-title column-body">
-      <h1 class="title">Beer Production Forecasting</h1>
+      <h1 class="title">Australia Production Forecasting</h1>
                   <div>
         <div class="description">
-          SPC applied to forecasting
+          SPC applied to forecasting &amp; monitoring
         </div>
       </div>
                           <div class="quarto-categories">
-                <div class="quarto-category">Beer</div>
                 <div class="quarto-category">intuitive analysis</div>
                 <div class="quarto-category">forecasting</div>
                 <div class="quarto-category">prediction</div>
@@ -159,7 +192,14 @@ ul.task-list li input[type="checkbox"] {
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a></li>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a>
+  <ul class="collapse">
+  <li><a href="#first-look---beer" id="toc-first-look---beer" class="nav-link" data-scroll-target="#first-look---beer">First look - Beer</a></li>
+  <li><a href="#tracking-by-quarters---years-1-5" id="toc-tracking-by-quarters---years-1-5" class="nav-link" data-scroll-target="#tracking-by-quarters---years-1-5">Tracking by quarters - years 1-5</a></li>
+  <li><a href="#tracking-by-quarters---years-1-10" id="toc-tracking-by-quarters---years-1-10" class="nav-link" data-scroll-target="#tracking-by-quarters---years-1-10">Tracking by quarters - years 1-10</a></li>
+  <li><a href="#reflection" id="toc-reflection" class="nav-link" data-scroll-target="#reflection">Reflection</a></li>
+  <li><a href="#next-steps" id="toc-next-steps" class="nav-link" data-scroll-target="#next-steps">Next Steps</a></li>
+  </ul></li>
   </ul>
 </nav>
     </div>
@@ -172,9 +212,244 @@ ul.task-list li input[type="checkbox"] {
 
 <section id="introduction" class="level2">
 <h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
+<p>I’d like to walk through an example of using SPC (statistical process control) to understand a non-manufacturing dataset. Control charts are useful for any process that happens over time. For this project I’ll use the aus_production dataset from the fpp3 package. It contains quarterly data from 1951 - 2010 of production amounts of beer, tobacco, bricks, cement, electricity, and gas.</p>
+<p>Rather than looking at the entire dataset, I’d like to walk through it as if this was a new process we’re tracking, and starting at the beginning. I’ll be using XmR aka ImR control charts, the chart for individual values. The value is plotted with lines marking the average, and upper/lower limits. The limits are known as 3 sigma limits, and we can use them as a clue to see if the process is changing over time and whether it is predictable. The limits are based on the differences between successive values.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co">#import aus_production dataset from fpp3</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>aus <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(aus_production)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co">#original variable Quarter contains both year YYYY and quarter, want to split for my purposes here - probably will want to separate by quarter</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co">#the year YYYY: as "year"</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>aus<span class="sc">$</span>year <span class="ot">=</span> <span class="fu">as.integer</span>(<span class="fu">sapply</span>(<span class="fu">strsplit</span>(<span class="fu">as.character</span>(aus<span class="sc">$</span>Quarter), <span class="at">split =</span> <span class="st">" "</span>), <span class="st">"[["</span>, <span class="dv">1</span>))</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="co">#the quarter Q1, Q2, Q3 etc as "quarter"</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>aus<span class="sc">$</span>quarter <span class="ot">=</span> <span class="fu">sapply</span>(<span class="fu">strsplit</span>(<span class="fu">as.character</span>(aus<span class="sc">$</span>Quarter), <span class="at">split =</span> <span class="st">" "</span>), <span class="st">"[["</span>, <span class="dv">2</span>)</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="co">#original variable was called "Quarter" which is confusing, rename it to be more descriptive</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="fu">colnames</span>(aus)[<span class="fu">colnames</span>(aus) <span class="sc">==</span> <span class="st">'Quarter'</span>] <span class="ot">&lt;-</span> <span class="st">'year_quarter'</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>aus <span class="sc">%&gt;%</span> </span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>    <span class="fu">pivot_longer</span>(<span class="at">cols =</span> <span class="sc">-</span><span class="fu">c</span>(year_quarter,year, quarter), <span class="at">names_to =</span> <span class="st">"product"</span>, <span class="at">values_to =</span> <span class="st">"quantity"</span>) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1,308 × 5
+   year_quarter  year quarter product     quantity
+          &lt;qtr&gt; &lt;int&gt; &lt;chr&gt;   &lt;chr&gt;          &lt;dbl&gt;
+ 1      1956 Q1  1956 Q1      Beer             284
+ 2      1956 Q1  1956 Q1      Tobacco         5225
+ 3      1956 Q1  1956 Q1      Bricks           189
+ 4      1956 Q1  1956 Q1      Cement           465
+ 5      1956 Q1  1956 Q1      Electricity     3923
+ 6      1956 Q1  1956 Q1      Gas                5
+ 7      1956 Q2  1956 Q2      Beer             213
+ 8      1956 Q2  1956 Q2      Tobacco         5178
+ 9      1956 Q2  1956 Q2      Bricks           204
+10      1956 Q2  1956 Q2      Cement           532
+# ℹ 1,298 more rows</code></pre>
+</div>
+</div>
+<section id="first-look---beer" class="level3">
+<h3 class="anchored" data-anchor-id="first-look---beer">First look - Beer</h3>
+<p>Say we have recently started tracking production of beer (in megaliters). We have just the past year’s data, recorded by quarter:</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>beer_df <span class="ot">&lt;-</span> <span class="fu">select</span>(aus, quarter, year, year_quarter, Beer)</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>beer_df[<span class="dv">1</span><span class="sc">:</span><span class="dv">4</span>, ] <span class="sc">%&gt;%</span> </span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> year_quarter, <span class="at">y =</span> Beer))<span class="sc">+</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_point</span>(<span class="at">size =</span> <span class="dv">3</span>)<span class="sc">+</span> <span class="fu">geom_line</span>()<span class="sc">+</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">labs</span>(<span class="at">y =</span> <span class="st">"Beer (megaliters)"</span>, <span class="at">title =</span> <span class="st">"First year"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-2-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Good so far. We see Q2 and Q3 are lowest, but we don’t know if this is meaningful or if this pattern will hold in future years. We could set up a control chart with just this year. Typically we would want more values before calculating limits, but we can start with as few values as we want really. Just remember these limits aren’t based on much data, and should be treated with a grain of salt, and revisited when we have more data.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>beer_df[<span class="dv">1</span><span class="sc">:</span><span class="dv">4</span>, ] <span class="sc">%&gt;%</span> </span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> year_quarter, <span class="at">y =</span> Beer))<span class="sc">+</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_point</span>(<span class="at">size =</span> <span class="dv">3</span>)<span class="sc">+</span> <span class="fu">geom_line</span>()<span class="sc">+</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stat_QC</span>(<span class="at">method =</span> <span class="st">"XmR"</span>, <span class="at">auto.label =</span> <span class="cn">TRUE</span>)<span class="sc">+</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">labs</span>(<span class="at">y =</span> <span class="st">"Beer (megaliters)"</span>, </span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>         <span class="at">title =</span> <span class="st">"First year control chart - limits are wide"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-3-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Based on the control chart, we predict future values will fall somewhere between 110.8 and 405.2. Let’s add another year and see what happens.</p>
+<p>First, I’ll add the next year using the limits calculated on just year 1 (1956).</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>beer_df[<span class="dv">1</span><span class="sc">:</span><span class="dv">8</span>, ] <span class="sc">%&gt;%</span> </span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> year_quarter, <span class="at">y =</span> Beer))<span class="sc">+</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_point</span>(<span class="at">size =</span> <span class="dv">3</span>)<span class="sc">+</span> <span class="fu">geom_line</span>()<span class="sc">+</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    <span class="co">#stat_QC(method = "XmR", auto.label = TRUE)+</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> <span class="fu">c</span>(<span class="fl">405.2</span>,<span class="dv">258</span>, <span class="fl">110.8</span>), <span class="at">color =</span> <span class="fu">c</span>(<span class="st">"red"</span>, <span class="st">"blue"</span>, <span class="st">"red"</span>))<span class="sc">+</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">labs</span>(<span class="at">y =</span> <span class="st">"Beer (megaliters)"</span>, </span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>         <span class="at">title =</span> <span class="st">"First 2 years, limits calculated with year 1"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-4-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>It does look like there might be a quarterly pattern already. We might want to start breaking out quarters and tracking them on their own. I’d like to see if production in each quarter is growing, declining, or staying the same.</p>
+<p>With year 3 I’ll start tracking by quarter in addition to all quarters together:</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>beer_df[<span class="dv">1</span><span class="sc">:</span><span class="dv">12</span>, ] <span class="sc">%&gt;%</span> </span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> year_quarter, <span class="at">y =</span> Beer))<span class="sc">+</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_point</span>(<span class="at">size =</span> <span class="dv">3</span>)<span class="sc">+</span> <span class="fu">geom_line</span>()<span class="sc">+</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    <span class="co">#stat_QC(method = "XmR", auto.label = TRUE)+</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> <span class="fu">c</span>(<span class="fl">405.2</span>,<span class="dv">258</span>, <span class="fl">110.8</span>), <span class="at">color =</span> <span class="fu">c</span>(<span class="st">"red"</span>, <span class="st">"blue"</span>, <span class="st">"red"</span>))<span class="sc">+</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">labs</span>(<span class="at">y =</span> <span class="st">"Beer (megaliters)"</span>, </span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>         <span class="at">title =</span> <span class="st">"First 3 years, limits calculated with year 1"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-5-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>beer_df[<span class="dv">1</span><span class="sc">:</span><span class="dv">12</span>, ] <span class="sc">%&gt;%</span> </span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> year_quarter, <span class="at">y =</span> Beer))<span class="sc">+</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_point</span>(<span class="at">size =</span> <span class="dv">3</span>)<span class="sc">+</span> <span class="fu">geom_line</span>()<span class="sc">+</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stat_QC</span>(<span class="at">method =</span> <span class="st">"XmR"</span>, <span class="at">auto.label =</span> <span class="cn">TRUE</span>)<span class="sc">+</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    <span class="co">#geom_hline(yintercept = c(405.2,258, 110.8), color = c("red", "blue", "red"))+</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">labs</span>(<span class="at">y =</span> <span class="st">"Beer (megaliters)"</span>, </span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>         <span class="at">title =</span> <span class="st">"First 3 years, limits calculated with years 1-3"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-5-2.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Recalculating the limits with 3 years of data has narrowed them somewhat, but I want to point this out - they aren’t very different than the limits calculated with only year 1 (4 data points!). It’s ok to calculate early and revisit.</p>
+<p>The quarterly differences are very clear now, let’s look at each quarter:</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>beer_df[<span class="dv">1</span><span class="sc">:</span><span class="dv">12</span>, ] <span class="sc">%&gt;%</span> </span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> year_quarter, <span class="at">y =</span> Beer))<span class="sc">+</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_point</span>(<span class="at">size =</span> <span class="dv">2</span>)<span class="sc">+</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_line</span>()<span class="sc">+</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stat_QC</span>(<span class="at">method =</span> <span class="st">"XmR"</span>, <span class="at">auto.label =</span> <span class="cn">FALSE</span>)<span class="sc">+</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">facet_wrap</span>(<span class="sc">~</span>quarter, <span class="at">ncol =</span> <span class="dv">4</span>)<span class="sc">+</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">labs</span>(<span class="at">y =</span> <span class="st">"Beer (megaliters)"</span>, </span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>         <span class="at">title =</span> <span class="st">"First 3 years, limits calculated by quarter, with years 1-3"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-6-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>The limits are very wide (relatively) due to the small number of data points per quarter. However, they are all much narrower than when we looked at all quarters together, indicating that the differences between quarters were inflating the variation observed.</p>
+</section>
+<section id="tracking-by-quarters---years-1-5" class="level3">
+<h3 class="anchored" data-anchor-id="tracking-by-quarters---years-1-5">Tracking by quarters - years 1-5</h3>
+<p>Suppose we want to see production go up over time, the chart will help us see if this is happening.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>beer_df[<span class="dv">1</span><span class="sc">:</span><span class="dv">20</span>, ] <span class="sc">%&gt;%</span> </span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> year_quarter, <span class="at">y =</span> Beer))<span class="sc">+</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_point</span>(<span class="at">size =</span> <span class="dv">2</span>)<span class="sc">+</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_line</span>()<span class="sc">+</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stat_QC</span>(<span class="at">method =</span> <span class="st">"XmR"</span>, <span class="at">auto.label =</span> <span class="cn">FALSE</span>)<span class="sc">+</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">facet_wrap</span>(<span class="sc">~</span>quarter, <span class="at">ncol =</span> <span class="dv">4</span>)<span class="sc">+</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">labs</span>(<span class="at">y =</span> <span class="st">"Beer (megaliters)"</span>, </span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>         <span class="at">title =</span> <span class="st">"First 5 years, limits calculated by quarter, with years 1-5"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-7-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co">#I'm just entering the limits by hand, it's quicker right now than doing with</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="co">#code, though that's easy to do with ggQC</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>limits5df <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">quarter =</span> <span class="fu">c</span>(<span class="st">"Q1"</span>, <span class="st">"Q2"</span>,<span class="st">"Q3"</span>,<span class="st">"Q4"</span>),</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>                        <span class="at">UL  =</span> <span class="fu">c</span>(<span class="dv">318</span>, <span class="dv">243</span>, <span class="dv">264</span>, <span class="dv">329</span>), </span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>                        <span class="at">avg =</span> <span class="fu">c</span>(<span class="dv">273</span>, <span class="dv">226</span>, <span class="dv">242</span>, <span class="dv">313</span>), </span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>                        <span class="at">LL  =</span> <span class="fu">c</span>(<span class="dv">228</span>, <span class="dv">208</span>, <span class="dv">220</span>, <span class="dv">298</span>)</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>                        )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<p>Limits for Q1 are still relatively wider than other quarters. I don’t see an upward trend yet, maybe in Q2 and Q3? With SPC, we’re not sure yet…I have seen many patterns like this in the real world that turned out to just be noise.</p>
+</section>
+<section id="tracking-by-quarters---years-1-10" class="level3">
+<h3 class="anchored" data-anchor-id="tracking-by-quarters---years-1-10">Tracking by quarters - years 1-10</h3>
+<p>If I made an animation of this, we could see it unfold point by point, I’ll work on that another time. (Right now I’m holding myself to a deadline so here’s another static plot - what do the first 10 years look like?)</p>
+<p>Before we look at this, note that I’m locking the limits we calculated with years 1-5 data.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>beer_df[<span class="dv">1</span><span class="sc">:</span><span class="dv">40</span>, ] <span class="sc">%&gt;%</span> </span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> year_quarter, <span class="at">y =</span> Beer))<span class="sc">+</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_point</span>(<span class="at">size =</span> <span class="dv">2</span>)<span class="sc">+</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_line</span>()<span class="sc">+</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_hline</span>(<span class="at">data =</span> limits5df, <span class="fu">aes</span>(<span class="at">yintercept =</span> UL), <span class="at">color =</span> <span class="st">"red"</span>)<span class="sc">+</span></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_hline</span>(<span class="at">data =</span> limits5df, <span class="fu">aes</span>(<span class="at">yintercept =</span> LL), <span class="at">color =</span> <span class="st">"red"</span>)<span class="sc">+</span></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_hline</span>(<span class="at">data =</span> limits5df, <span class="fu">aes</span>(<span class="at">yintercept =</span> avg), <span class="at">color =</span> <span class="st">"blue"</span>)<span class="sc">+</span></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>    <span class="fu">facet_wrap</span>(<span class="sc">~</span>quarter, <span class="at">ncol =</span> <span class="dv">4</span>)<span class="sc">+</span></span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>    <span class="fu">labs</span>(<span class="at">y =</span> <span class="st">"Beer (megaliters)"</span>, </span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>         <span class="at">title =</span> <span class="st">"First 10 years, limits calculated by quarter with years 1-5"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-8-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>A few interesting things (what do you see?): Seems like definite upward trends.</p>
+<p>But when might we start to conclude that?</p>
+<p>Q2 and Q3 both have a point above the upper limit in year 7, Q4 exceeds the upper limit in year 6. Any point outside a limit indicates something unusual. After these years, the points continue to rise, at year 7 or 8 I would believe there really is an upward trend and start tracking differently.</p>
+</section>
+<section id="reflection" class="level3">
+<h3 class="anchored" data-anchor-id="reflection">Reflection</h3>
+<p>Sometimes there might be a tendency to overreact to data points, control charts are great for putting data in context. While it might look like there is an upward trend in some quarters, we got better confirmation of a change around year 6/7. Around year 8 I would switch to a trended control chart, fitting a regression line and putting limits around it to continue monitoring beer production.</p>
+</section>
+<section id="next-steps" class="level3">
+<h3 class="anchored" data-anchor-id="next-steps">Next Steps</h3>
+<p>I’ll put together trended control charts, and discuss the interpretation and calculations used.</p>
 <p><img src="profile.jpg" class="img-fluid"></p>
 
 
+</section>
 </section>
 
 </main> <!-- /main -->

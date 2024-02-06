@@ -3,7 +3,6 @@ title: "Australia Production Forecasting"
 description: "SPC applied to forecasting & monitoring"
 author: "Ben Jepson"
 date: ""
-draft: false
 format:
   html:
     toc: true
